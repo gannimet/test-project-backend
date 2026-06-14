@@ -25,7 +25,7 @@ webSocketServer.on('connection', (ws) => {
         JSON.stringify({
             type: 'chatmessage',
             message: 'Welcome to my Websocket server!',
-        })
+        }),
     );
 });
 
