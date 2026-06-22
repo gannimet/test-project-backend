@@ -1,16 +1,37 @@
 import express from 'express';
 import { createServer } from 'http';
-import { WebSocketServer } from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 
 const app = express();
 const server = createServer(app);
 const webSocketServer = new WebSocketServer({ server });
 
+type IdentifiableWebSocket = {
+    socket: WebSocket;
+    id: string;
+};
+
+const connectedClients: IdentifiableWebSocket[] = [];
+
 webSocketServer.on('connection', (ws) => {
-    console.log('New client connected');
+    const clientId = crypto.randomUUID();
+
+    console.log('New client connected:', clientId);
+    connectedClients.push({
+        id: clientId,
+        socket: ws,
+    });
 
     ws.on('message', (data) => {
         console.log('New message:', data.toString());
+        connectedClients.forEach((client) => {
+            client.socket.send(
+                JSON.stringify({
+                    sender: client.id,
+                    content: data.toString(),
+                }),
+            );
+        });
     });
 
     ws.on('close', () => {
@@ -23,8 +44,8 @@ webSocketServer.on('connection', (ws) => {
 
     ws.send(
         JSON.stringify({
-            type: 'chatmessage',
-            message: 'Welcome to my Websocket server!',
+            sender: 'Server',
+            content: 'Welcome to my Websocket server!',
         }),
     );
 });
